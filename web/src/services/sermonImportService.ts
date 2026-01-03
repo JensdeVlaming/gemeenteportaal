@@ -24,13 +24,18 @@ async function callSermonFunction(
   defaultError: string
 ) {
   const session = await getSession();
+  if (!session?.access_token) {
+    throw new Error("Gebruikerssessie ongeldig. Log opnieuw in.");
+  }
+
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/${endpoint}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session?.access_token}`,
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ sermons: rows }),
     }
