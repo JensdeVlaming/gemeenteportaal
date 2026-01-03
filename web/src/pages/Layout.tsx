@@ -27,12 +27,10 @@ export default function Layout() {
     );
   }
 
-  const showHeader = Boolean(session);
-
   return (
     <div className="min-h-screen bg-gray-100">
-      {showHeader && <AppHeader />}
-      <div className={showHeader ? "pt-4 px-4" : ""}>
+      <AppHeader />
+      <div className="pt-4 px-4">
         <Outlet />
       </div>
     </div>

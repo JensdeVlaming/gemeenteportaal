@@ -16,12 +16,13 @@ export async function requestOtpCode(email: string) {
 }
 
 export async function verifyOtpCode(email: string, token: string) {
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
     type: "magiclink",
   });
   if (error) throw error;
+  return data;
 }
 
 export async function signOut() {

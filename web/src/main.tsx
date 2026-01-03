@@ -7,6 +7,7 @@ import ContactCalendarEmbed from "./pages/ContactCalendarEmbed";
 import Home from "./pages/Home";
 import Layout from "./pages/Layout";
 import Login from "./pages/Login";
+import MagicLinkFlow from "./pages/MagicLinkFlow";
 import PublicCalendarEmbed from "./pages/PublicCalendarEmbed";
 import SermonImportPage from "./pages/SermonImportPage";
 import Sermons from "./pages/Sermons";
@@ -17,12 +18,13 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <Home /> },
-      { path: "login", element: <Login /> },
       { path: "sermons", element: <Sermons /> },
       { path: "sermons/import", element: <SermonImportPage /> },
       { path: "collections", element: <Collections /> },
     ],
   },
+  { path: "login", element: <Login /> },
+  { path: "login/instructions", element: <MagicLinkFlow /> },
   {
     path: "calendar/embed",
     element: <PublicCalendarEmbed />,
@@ -32,6 +34,7 @@ const router = createBrowserRouter([
     element: <ContactCalendarEmbed />,
   },
 ]);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <RouterProvider router={router} />
