@@ -1,4 +1,3 @@
-import { getSession } from "@/services/authService";
 import { ImportStatus, type ParsedSermonRow } from "@/types/sermonImport";
 import { parseSermonsExcel } from "@/utils/excelSermonUtils";
 
@@ -23,26 +22,23 @@ async function callSermonFunction(
   rows: ParsedSermonRow[],
   defaultError: string
 ) {
-  const session = await getSession();
-  if (!session?.access_token) {
-    throw new Error("Gebruikerssessie ongeldig. Log opnieuw in.");
-  }
-
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/${endpoint}`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${
+          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        }`,
       },
       body: JSON.stringify({ sermons: rows }),
     }
   );
 
-  const result: SermonFunctionResponse & { error?: string } =
-    await response.json().catch(() => ({}));
+  const result: SermonFunctionResponse & { error?: string } = await response
+    .json()
+    .catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(result?.error ?? defaultError);

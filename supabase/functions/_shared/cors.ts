@@ -4,7 +4,8 @@ const DEFAULT_ORIGIN =
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": DEFAULT_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+  "Access-Control-Allow-Credentials": "true",
   "Access-Control-Max-Age": "86400",
   Vary: "Origin",
 };
