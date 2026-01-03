@@ -5,6 +5,20 @@ import { useMemo, useState } from "react";
 import { EditEventModal } from "../event/EditEventModal";
 import { EventCard } from "../event/EventCard";
 
+function mapSermonToEventFull(sermon: SermonFull): EventFull {
+  const { event, ...sermonData } = sermon;
+  return {
+    ...event,
+    type: "sermon",
+    sermons: [
+      {
+        ...sermonData,
+        collections: sermon.collections,
+      },
+    ],
+  };
+}
+
 interface SermonListProps {
   sermons: SermonFull[];
   loading: boolean;
@@ -19,15 +33,9 @@ export default function SermonList({
   onRefresh,
 }: SermonListProps) {
   const [selectedEvent, setSelectedEvent] = useState<EventFull | null>(null);
-  const enrichedEvents = useMemo(
-    () =>
-      sermons.map((s) => ({
-        ...s.event,
-        type: "sermon",
-        sermons: [{ ...s, collections: s.collections }],
-      })),
-    [sermons]
-  );
+  const enrichedEvents = useMemo(() => sermons.map(mapSermonToEventFull), [
+    sermons,
+  ]);
 
   if (loading)
     return (

@@ -74,11 +74,17 @@ export function useSermonImport(options?: UseSermonImportOptions) {
     setError(null);
   }
 
-  const hasInvalidRows = rows.some((row) =>
-    [ImportStatus.Ongeldig, ImportStatus.Fout, ImportStatus.Leeg].includes(
-      row.status as ImportStatus
-    )
-  );
+  const isInvalidStatus = (
+    status?: ImportStatus
+  ): status is
+    | typeof ImportStatus.Ongeldig
+    | typeof ImportStatus.Fout
+    | typeof ImportStatus.Leeg =>
+    status === ImportStatus.Ongeldig ||
+    status === ImportStatus.Fout ||
+    status === ImportStatus.Leeg;
+
+  const hasInvalidRows = rows.some((row) => isInvalidStatus(row.status));
 
   const canImport = rows.length > 0 && !hasInvalidRows;
 

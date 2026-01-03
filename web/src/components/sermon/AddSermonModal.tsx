@@ -161,13 +161,15 @@ export default function AddSermonModal({
     try {
       const results = await runSermonImport([row]);
       const result = results?.[0];
-      if (
-        !result ||
-        ![
-          ImportStatus.Aangemaakt,
-          ImportStatus.Hergebruikt,
-        ].includes(result.status as ImportStatus)
-      ) {
+      const isFinalizedStatus = (
+        status?: ImportStatus
+      ): status is
+        | typeof ImportStatus.Aangemaakt
+        | typeof ImportStatus.Hergebruikt =>
+        status === ImportStatus.Aangemaakt ||
+        status === ImportStatus.Hergebruikt;
+
+      if (!result || !isFinalizedStatus(result.status)) {
         throw new Error(
           result?.message ?? "Helaas kon de preek niet worden toegevoegd."
         );

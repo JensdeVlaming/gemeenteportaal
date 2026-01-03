@@ -33,7 +33,7 @@ export function EventCard({ event, onSelect, className }: EventCardProps) {
     ? "from-[#E98C00] via-[#fbbf24] to-[#E98C00]"
     : "from-[#9a3412] via-[#c2410c] to-[#ea580c]";
 
-  const handleKeyDown = (eventKey: KeyboardEvent<HTMLArticleElement>) => {
+  const handleKeyDown = (eventKey: KeyboardEvent<HTMLElement>) => {
     if (onSelect && (eventKey.key === "Enter" || eventKey.key === " ")) {
       eventKey.preventDefault();
       onSelect(event);
