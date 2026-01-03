@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Gemeenteportaal inloggen</title>
+    <title>Bevestig je e-mailadres</title>
     <style>
       :root {
         font-family: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -75,30 +75,6 @@
       .cta:hover {
         opacity: 0.95;
       }
-      .otp-panel {
-        background-color: #fff5e6;
-        border: 1px solid rgba(233, 140, 0, 0.4);
-        border-radius: 18px;
-        padding: 18px;
-      }
-      .otp-title {
-        margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #1f2a44;
-      }
-      .otp-code {
-        margin: 10px 0 6px;
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 0.3em;
-        color: #0f2a44;
-      }
-      .otp-hint {
-        margin: 0;
-        font-size: 14px;
-        color: #475569;
-      }
       .footer {
         font-size: 13px;
         color: #8c96a8;
@@ -123,29 +99,20 @@
     <div class="container">
       <div class="card">
         <div class="badge">Gemeenteportaal</div>
-        <h1>Loginlink klaar</h1>
+        <h1>E-mailadres bevestigen</h1>
         <p>
-          Klik op de knop hieronder om direct het gemeenteportaal te openen. De
-          loginlink werkt één keer en vervalt snel, zodat je account veilig
-          blijft.
+          Bevestig je e-mailadres door op de knop hieronder te klikken.
+          De link vervalt snel, dus gebruik hem direct.
         </p>
         <a class="cta" href="{{ .ConfirmationURL }}"
-          >Inloggen op het gemeenteportaal</a
+          >E-mailadres bevestigen</a
         >
-        <div class="otp-panel">
-          <p class="otp-title">
-            Alternatief: gebruik de 8-cijferige code uit het bericht
-          </p>
-          <p class="otp-code">{{ .Token }}</p>
-          <p class="otp-hint">
-            Vul deze code in op het inlogscherm om direct toegang te krijgen.
-          </p>
-        </div>
         <p class="footer">
           Heb je hulp nodig? Mail
           <a href="mailto:webredactie@pkndubbeldam.nl">
-            webredactie@pkndubbeldam.nl.
+            webredactie@pkndubbeldam.nl
           </a>
+          .
         </p>
       </div>
     </div>

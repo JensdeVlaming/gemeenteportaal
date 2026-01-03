@@ -3,12 +3,19 @@ import { Mail } from "lucide-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const OTP_LENGTH = 8;
+const verificationSteps = [
+  "Open de e-mail met de loginlink en kijk bovenaan in de tekst voor de knop 'E-mailadres bevestigen'.",
+  "Klik die bevestigingsknop aan zodat we kunnen bevestigen dat het jouw adres is.",
+  "Klik daarna op de magic link of gebruik de 8-cijferige code op dit scherm om in te loggen.",
+];
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(() =>
-    Array.from({ length: 6 }, () => "")
+    Array.from({ length: OTP_LENGTH }, () => "")
   );
   const [otpError, setOtpError] = useState("");
   const [otpStatus, setOtpStatus] = useState("");
@@ -30,7 +37,7 @@ export default function Login() {
   async function handleVerifyOtpCode(digits?: string[]) {
     const digitsToUse = digits ?? otpDigits;
     const joinedCode = digitsToUse.join("");
-    if (!email || joinedCode.length < 6) {
+    if (!email || joinedCode.length < OTP_LENGTH) {
       setOtpError("Vul je e-mailadres en de ontvangen code in.");
       return;
     }
@@ -40,7 +47,7 @@ export default function Login() {
     try {
       await verifyOtpCode(email, joinedCode);
       setOtpStatus("Code geverifieerd. Je wordt ingelogd.");
-      setOtpDigits(Array.from({ length: 6 }, () => ""));
+      setOtpDigits(Array.from({ length: OTP_LENGTH }, () => ""));
       otpRefs.current[0]?.focus();
       navigate("/", { replace: true });
     } catch (err: any) {
@@ -70,6 +77,24 @@ export default function Login() {
           </p>
         </div>
 
+        <div className="mb-4 rounded-2xl border border-[#E98C00] bg-[#fff7ef] p-4 text-left text-sm text-[#1F2A44] shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#E98C00]">
+            Eerste keer inloggen?
+          </p>
+          <p className="mt-1 text-sm text-[#1F2A44]">
+            Bevestig eerst je e-mailadres via de link in de e-mail. Daarna kun je via de magic
+            link of de code binnenkomen.
+          </p>
+          <ol className="mt-3 space-y-1 text-xs text-[#475569]">
+            {verificationSteps.map((step, index) => (
+              <li key={step}>
+                <span className="font-semibold text-[#1F2A44]">{index + 1}.</span>{" "}
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+
         {sent ? (
           <>
             <div
@@ -86,6 +111,10 @@ export default function Login() {
                 wordt je automatisch ingelogd en kom je terug in het portaal.
                 Staat hij niet in je inbox? Kijk even in de spambox.
               </p>
+              <p className="mt-2 text-sm text-[#1F2A44]">
+                Dezelfde mail bevat ook een knop om je e-mailadres te bevestigen. Klik die
+                eerst aan zodat je account helemaal geverifieerd is voordat je verdergaat.
+              </p>
             </div>
             <div className="mt-6">
               <span className="block h-px bg-gray-200" />
@@ -94,15 +123,15 @@ export default function Login() {
               className="mt-4 rounded-lg p-4 text-center text-sm"
               style={{ backgroundColor: "#F7F7F7", color: "#1F2A44" }}
             >
-              <p className="text-sm font-semibold">
-                Alternatief: gebruik de 6-cijferige code
-              </p>
+                <p className="text-sm font-semibold">
+                  Alternatief: gebruik de 8-cijferige code
+                </p>
               <p className="mt-2 text-sm text-gray-500">
                 De code staat in hetzelfde bericht als de magic link. Voer de
                 code in en druk op bevestig.
               </p>
               <div className="mt-3">
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-8 gap-2">
                   {otpDigits.map((digit, index) => (
                     <input
                       key={index}
@@ -117,14 +146,12 @@ export default function Login() {
                         const value = e.target.value.replace(/\D/g, "");
                         const inputType = (e.nativeEvent as InputEvent)
                           ?.inputType;
-                        const prevFull = otpDigits.every(
-                          (digit) => digit !== ""
-                        );
+                        const prevFull = otpDigits.every((digit) => digit !== "");
                         const newDigits = [...otpDigits];
                         newDigits[index] = value.slice(-1);
                         setOtpError("");
                         setOtpDigits(newDigits);
-                        if (value && index < 5) {
+                        if (value && index < OTP_LENGTH - 1) {
                           otpRefs.current[index + 1]?.focus();
                         }
                         const isFull = newDigits.every((digit) => digit !== "");
@@ -148,17 +175,17 @@ export default function Login() {
                       }}
                       onPaste={(e) => {
                         e.preventDefault();
-                        const paste = e.clipboardData
-                          .getData("text")
-                          .replace(/\D/g, "")
-                          .slice(0, 6);
+                          const paste = e.clipboardData
+                            .getData("text")
+                            .replace(/\D/g, "")
+                            .slice(0, OTP_LENGTH);
                         if (!paste) return;
                         const pasteDigits = Array.from(
-                          { length: 6 },
+                          { length: OTP_LENGTH },
                           (_, i) => paste[i] ?? ""
                         );
                         setOtpDigits(pasteDigits);
-                        const nextIndex = Math.min(paste.length, 5);
+                        const nextIndex = Math.min(paste.length, OTP_LENGTH - 1);
                         otpRefs.current[nextIndex]?.focus();
                         if (pasteDigits.every((digit) => digit)) {
                           void handleVerifyOtpCode(pasteDigits);
