@@ -1,32 +1,26 @@
 import { checkSermonRows } from "../_shared/sermon-import.ts";
+import { corsPreflightResponse, jsonResponse } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return corsPreflightResponse();
+  }
+
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
   try {
     const { sermons } = await req.json();
     if (!Array.isArray(sermons)) {
-      return new Response(JSON.stringify({ error: "Geen data ontvangen" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Geen data ontvangen" }, 400);
     }
 
     const results = await checkSermonRows(sermons);
 
-    return new Response(JSON.stringify({ results }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ results });
   } catch (error) {
     console.error("Sermon check error:", error);
-    return new Response(JSON.stringify({ error: "Serverfout bij controle." }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Serverfout bij controle." }, 500);
   }
 });
