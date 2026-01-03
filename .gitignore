@@ -1,0 +1,77 @@
+# =========================
+# Logs (all subfolders)
+# =========================
+logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
+
+# =========================
+# Dependencies (all apps)
+# =========================
+**/node_modules/
+
+# =========================
+# Build / Output (all apps)
+# =========================
+**/dist/
+**/dist-ssr/
+**/build/
+**/out/
+
+# =========================
+# Environment & Secrets
+# =========================
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+
+# =========================
+# Local Overrides
+# =========================
+**/*.local
+
+# =========================
+# Caches
+# =========================
+**/.cache/
+**/.npm/
+**/.yarn/
+**/.pnpm-store/
+**/.eslintcache
+**/.stylelintcache
+**/.turbo/
+**/.next/
+**/.nuxt/
+**/.vite/
+
+# =========================
+# Testing & Coverage
+# =========================
+**/coverage/
+**/*.lcov
+
+# =========================
+# Editor & OS Noise
+# =========================
+**/.vscode/*
+!**/.vscode/extensions.json
+**/.idea/
+**/.DS_Store
+**/Thumbs.db
+**/*.suo
+**/*.ntvs*
+**/*.njsproj
+**/*.sln
+**/*.sw?
+
+# =========================
+# Temporary / Runtime
+# =========================
+**/tmp/
+**/temp/
