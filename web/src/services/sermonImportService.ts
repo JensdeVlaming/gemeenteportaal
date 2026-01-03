@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabaseClient";
 import { ImportStatus, type ParsedSermonRow } from "@/types/sermonImport";
 import { parseSermonsExcel } from "@/utils/excelSermonUtils";
 
@@ -22,33 +23,25 @@ async function callSermonFunction(
   rows: ParsedSermonRow[],
   defaultError: string
 ) {
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${
-          import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-        }`,
-      },
-      body: JSON.stringify({ sermons: rows }),
-    }
-  );
+  const { data, error } = await supabase.functions.invoke<
+    SermonFunctionResponse & { error?: string }
+  >(endpoint, {
+    body: { sermons: rows },
+  });
 
-  const result: SermonFunctionResponse & { error?: string } = await response
-    .json()
-    .catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(result?.error ?? defaultError);
+  if (error) {
+    throw new Error(error.message ?? defaultError);
   }
 
-  if (!result.results) {
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  if (!data?.results) {
     throw new Error("Ongeldig serverantwoord.");
   }
 
-  return result.results;
+  return data.results;
 }
 
 export async function loadSermonsFromFile(file: File) {
