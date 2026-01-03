@@ -3,7 +3,9 @@ import { supabase } from "@/lib/supabaseClient";
 export async function signInWithEmail(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: "http://localhost:5173" },
+    options: {
+      emailRedirectTo: `${window.location.origin}/`,
+    },
   });
   if (error) throw error;
 }
