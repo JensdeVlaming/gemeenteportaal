@@ -39,18 +39,18 @@ type ImportRow struct {
 }
 
 type ImportResultRow struct {
-	EventTitle     string             `json:"event_title"`
-	EventStartTime string             `json:"event_start_time"`
-	EventEndTime   string             `json:"event_end_time"`
-	Speaker        string             `json:"speaker"`
-	Collections    []ImportCollection `json:"collections"`
-	Status         ImportStatus       `json:"status"`
-	Message        *string            `json:"message,omitempty"`
-	EventID        *string            `json:"event_id,omitempty"`
-	SermonID       *string            `json:"sermon_id,omitempty"`
-	CollectionDiffs *CollectionDiffs `json:"collectionDiffs,omitempty"`
-	SpeakerDiff    *ValueDiff         `json:"speakerDiff,omitempty"`
-	TitleDiff      *ValueDiff         `json:"titleDiff,omitempty"`
+	EventTitle      string             `json:"event_title"`
+	EventStartTime  string             `json:"event_start_time"`
+	EventEndTime    string             `json:"event_end_time"`
+	Speaker         string             `json:"speaker"`
+	Collections     []ImportCollection `json:"collections"`
+	Status          ImportStatus       `json:"status"`
+	Message         *string            `json:"message,omitempty"`
+	EventID         *string            `json:"event_id,omitempty"`
+	SermonID        *string            `json:"sermon_id,omitempty"`
+	CollectionDiffs *CollectionDiffs   `json:"collectionDiffs,omitempty"`
+	SpeakerDiff     *ValueDiff         `json:"speakerDiff,omitempty"`
+	TitleDiff       *ValueDiff         `json:"titleDiff,omitempty"`
 }
 
 type CollectionDiffs struct {

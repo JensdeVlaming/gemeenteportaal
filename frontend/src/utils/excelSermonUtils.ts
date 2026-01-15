@@ -59,6 +59,26 @@ export async function parseSermonsExcel(
   });
 }
 
+
+function formatLocalRFC3339(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (input: number) => String(input).padStart(2, "0");
+  const offsetMinutes = -date.getTimezoneOffset();
+  const offsetSign = offsetMinutes >= 0 ? "+" : "-";
+  const offsetAbs = Math.abs(offsetMinutes);
+  const offsetHours = pad(Math.floor(offsetAbs / 60));
+  const offsetRemainingMinutes = pad(offsetAbs % 60);
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
+    date.getSeconds()
+  )}${offsetSign}${offsetHours}:${offsetRemainingMinutes}`;
+}
+
+
 /* ──────────────────────────────
    Export sermons to Excel (uniform with import)
 ──────────────────────────────── */
@@ -89,8 +109,8 @@ export function exportSermonsToExcel(
   const rows = sermons.map((s) => {
     const row: Record<string, string> = {
       event_title: s.event?.title ?? "",
-      event_start_time: s.event?.start_time ?? "",
-      event_end_time: s.event?.end_time ?? "",
+      event_start_time: formatLocalRFC3339(s.event?.start_time ?? ""),
+      event_end_time: formatLocalRFC3339(s.event?.end_time ?? ""),
       speaker: s.speaker ?? "",
     };
 
