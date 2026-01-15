@@ -45,6 +45,24 @@ func registerSettingsHooks(app *pocketbase.PocketBase) {
 	})
 }
 
+func registerEmailTemplates(app *pocketbase.PocketBase) {
+	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
+
+		collection, err := e.App.FindCollectionByNameOrId("_pb_users_auth_")
+		if err != nil {
+			return err
+		}
+
+		collection.OTP.EmailTemplate.Subject = "Gemeenteportaal inloggen"
+		collection.OTP.EmailTemplate.Body = otpEmailTemplate
+
+		return e.App.Save(collection)
+	})
+}
+
 func registerRoutes(app *pocketbase.PocketBase) {
 	app.OnServe().Bind(&hook.Handler[*core.ServeEvent]{
 		Func: func(e *core.ServeEvent) error {
