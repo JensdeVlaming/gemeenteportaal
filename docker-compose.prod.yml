@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_POCKETBASE_URL: ${VITE_POCKETBASE_URL}
+    volumes:
+      - pb_data:/app/pb_data
+      - pb_public:/app/pb_public
+    env_file:
+      - stack.env
+    ports:
+      - "8090:8090"
+    restart: unless-stopped
+
+volumes:
+  pb_data:
+  pb_public:
