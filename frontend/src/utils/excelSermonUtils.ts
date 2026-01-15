@@ -1,6 +1,50 @@
 import type { ParsedSermonRow } from "@/types/sermonImport";
 import type { Collection, Event, Sermon } from "@/types/types";
-import * as XLSX from "xlsx";
+import ExcelJS, { type CellValue } from "exceljs";
+
+const EXCEL_MIME =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+async function saveWorkbook(workbook: ExcelJS.Workbook, filename: string) {
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: EXCEL_MIME });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function cellToString(cell: ExcelJS.Cell): string {
+  if (cell.text) {
+    return cell.text.trim();
+  }
+
+  const value = cell.value;
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number") return String(value);
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (value instanceof Date) return value.toISOString();
+
+  if (typeof value === "object") {
+    if ("text" in value && typeof value.text === "string") {
+      return value.text.trim();
+    }
+    if ("richText" in value && Array.isArray(value.richText)) {
+      return value.richText.map((part) => part.text).join("").trim();
+    }
+    if ("formula" in value && "result" in value) {
+      const result = value.result;
+      return result == null ? "" : String(result);
+    }
+  }
+
+  return String(value);
+}
 
 /* ──────────────────────────────
    Export a blank sermon template
@@ -21,10 +65,10 @@ export function exportSermonTemplate(collectionCount = 3) {
 
   const headers = [...baseHeaders, ...collectionHeaders];
 
-  const ws = XLSX.utils.aoa_to_sheet([headers]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Preken-template");
-  XLSX.writeFile(wb, "preken_import_template.xlsx");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Preken-template");
+  worksheet.addRow(headers);
+  void saveWorkbook(workbook, "preken_import_template.xlsx");
 }
 
 /* ──────────────────────────────
@@ -34,9 +78,41 @@ export async function parseSermonsExcel(
   file: File
 ): Promise<ParsedSermonRow[]> {
   const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(data);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const headerRow = sheet.getRow(1);
+  const headerValues = headerRow.values ?? [];
+  const rawHeaders: CellValue[] = Array.isArray(headerValues)
+    ? headerValues
+    : (Object.values(headerValues) as CellValue[]);
+  const headers = rawHeaders
+    .slice(1)
+    .map((value: CellValue) => (value == null ? "" : String(value).trim()));
+
+  const rows: Record<string, string>[] = [];
+  const lastRow = sheet.rowCount;
+
+  for (let rowIndex = 2; rowIndex <= lastRow; rowIndex += 1) {
+    const row = sheet.getRow(rowIndex);
+    const rowData: Record<string, string> = {};
+    let hasData = false;
+
+    headers.forEach((header: string, headerIndex: number) => {
+      if (!header) return;
+      const value = cellToString(row.getCell(headerIndex + 1));
+      rowData[header] = value;
+      if (value) {
+        hasData = true;
+      }
+    });
+
+    if (hasData) {
+      rows.push(rowData);
+    }
+  }
 
   return rows.map((row) => {
     const collections = Object.keys(row)
@@ -128,8 +204,11 @@ export function exportSermonsToExcel(
     return row;
   });
 
-  const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Preken");
-  XLSX.writeFile(wb, "preken_export.xlsx");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Preken");
+  worksheet.addRow(headers);
+  worksheet.addRows(
+    rows.map((row) => headers.map((header) => row[header] ?? ""))
+  );
+  void saveWorkbook(workbook, "preken_export.xlsx");
 }
