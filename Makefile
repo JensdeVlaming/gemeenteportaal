@@ -3,26 +3,7 @@ SHELL := /bin/bash
 BACKEND_DIR := backend
 FRONTEND_DIR := frontend
 
-.PHONY: backend frontend install backend-install frontend-install compose-dev compose-prod compose-dev-down compose-prod-down
-
-## backend: start PocketBase backend (exits when you hit Ctrl+C)
-backend:
-\tcd $(BACKEND_DIR) && go run .
-
-## frontend: start the Vite dev server
-frontend:
-\tcd $(FRONTEND_DIR) && npm run dev -- --host 0.0.0.0
-
-## backend-install: install backend dependencies
-backend-install:
-\tcd $(BACKEND_DIR) && go mod download
-
-## frontend-install: install frontend dependencies
-frontend-install:
-\tcd $(FRONTEND_DIR) && npm install
-
-## install: install both frontend + backend dependencies
-install: backend-install frontend-install
+.PHONY: compose-dev compose-prod compose-dev-down compose-prod-down
 
 ## compose-dev: start dev services (backend, frontend watcher, mailpit)
 compose-dev:
