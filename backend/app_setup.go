@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -69,7 +67,6 @@ func registerRoutes(app *pocketbase.PocketBase) {
 	app.OnServe().Bind(&hook.Handler[*core.ServeEvent]{
 		Func: func(e *core.ServeEvent) error {
 			publicDir := resolvePublicDir()
-			e.Router.Use(allowEmbedMiddleware)
 			if !e.Router.HasRoute(http.MethodGet, "/{path...}") {
 				e.Router.GET("/{path...}", apis.Static(os.DirFS(publicDir), true))
 			}
@@ -79,24 +76,6 @@ func registerRoutes(app *pocketbase.PocketBase) {
 		},
 		Priority: 999,
 	})
-}
-
-func allowEmbedMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		if isEmbedPath(c.Request().URL.Path) {
-			c.Response().Before(func() {
-				headers := c.Response().Header()
-				headers.Del("X-Frame-Options")
-				headers.Set("Content-Security-Policy", "frame-ancestors *")
-			})
-		}
-
-		return next(c)
-	}
-}
-
-func isEmbedPath(path string) bool {
-	return strings.HasPrefix(path, "/calendar/embed") || strings.HasPrefix(path, "/calendar/contact")
 }
 
 func resolvePublicDir() string {
