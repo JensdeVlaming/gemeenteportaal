@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -80,16 +79,15 @@ func registerRoutes(app *pocketbase.PocketBase) {
 }
 
 func registerSecurityHeaders(app *pocketbase.PocketBase) {
-	app.OnBeforeServe().BindFunc(func(e *core.ServeEvent) error {
-		e.Router.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				c.Response().Header().Set(
-					"Content-Security-Policy",
-					"frame-ancestors https://pkndubbeldam.nl",
-				)
-				return next(c)
-			}
+	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		e.Router.BindFunc(func(re *core.RequestEvent) error {
+			re.Response.Header().Set(
+				"Content-Security-Policy",
+				"frame-ancestors https://pkndubbeldam.nl",
+			)
+			return re.Next()
 		})
+
 		return e.Next()
 	})
 }
