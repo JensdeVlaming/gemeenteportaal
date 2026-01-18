@@ -21,6 +21,7 @@ func main() {
 
 	registerSettingsHooks(app)
 	registerEmailTemplates(app)
+	registerSecurityHeaders(app)
 	registerRoutes(app)
 
 	if err := app.Start(); err != nil {
