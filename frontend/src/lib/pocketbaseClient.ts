@@ -43,17 +43,9 @@ export async function pbRequest<T>(path: string, options: RequestOptions = {}) {
   return payload as T;
 }
 
-type ListResponse<T> = {
-  page: number;
-  perPage: number;
-  totalPages: number;
-  totalItems: number;
-  items: T[];
-};
-
 export async function pbListAll<T>(
   collection: string,
-  query: Record<string, string> = {}
+  query: Record<string, string> = {},
 ) {
   const items: T[] = [];
   const perPage = 200;
@@ -61,7 +53,9 @@ export async function pbListAll<T>(
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const data = await pb.collection(collection).getList<T>(page, perPage, query);
+    const data = await pb
+      .collection(collection)
+      .getList<T>(page, perPage, query);
 
     items.push(...(data?.items ?? []));
     totalPages = data?.totalPages ?? 1;
@@ -73,7 +67,7 @@ export async function pbListAll<T>(
 
 export async function pbListPage<T>(
   collection: string,
-  query: Record<string, string> = {}
+  query: Record<string, string> = {},
 ) {
   const page = Number(query.page ?? 1);
   const perPage = Number(query.perPage ?? 30);
