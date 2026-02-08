@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     ports:
-      - "8090:8090"
+      - "8093:8090"
     restart: unless-stopped
 
   frontend:
@@ -29,5 +29,5 @@ services:
     image: axllent/mailpit:latest
     ports:
       - "8025:8025"
-      - "1025:1025"
+      - "1028:1025"
     restart: unless-stopped

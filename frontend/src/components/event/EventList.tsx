@@ -8,9 +8,22 @@ import { EditEventModal } from "./EditEventModal";
 import { EventCard } from "./EventCard";
 
 export default function EventList() {
-  const { events, loading, error, refresh } = useEvents();
+  const {
+    events,
+    loading,
+    error,
+    refresh,
+    page,
+    perPage,
+    totalItems,
+    nextPage,
+    prevPage,
+    canPrev,
+    canNext,
+  } = useEvents();
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventFull | null>(null);
+  const startIndex = (page - 1) * perPage;
 
   const handleEventsChanged = async () => {
     await refresh();
@@ -39,7 +52,7 @@ export default function EventList() {
         <Button onClick={() => setModalOpen(true)}>Activiteit toevoegen</Button>
       </div>
 
-      {events?.length ? (
+      {totalItems > 0 ? (
         <section
           aria-label="Lijst van diensten"
           className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
@@ -58,6 +71,26 @@ export default function EventList() {
           <Button className="mt-4" onClick={() => setModalOpen(true)}>
             Maak eerste activiteit
           </Button>
+        </div>
+      )}
+
+      {(canPrev || canNext || loading) && (
+        <div className="mt-8 flex flex-col items-center gap-4 text-sm text-gray-500">
+          {totalItems > 0 && (
+            <p>
+              Toont {startIndex + 1}–{startIndex + events.length} van
+              {" "}
+              {totalItems} geplande items.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={prevPage} disabled={!canPrev}>
+              Vorige
+            </Button>
+            <Button onClick={nextPage} disabled={!canNext}>
+              Volgende
+            </Button>
+          </div>
         </div>
       )}
 

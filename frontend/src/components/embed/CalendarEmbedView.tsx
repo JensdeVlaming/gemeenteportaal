@@ -3,7 +3,6 @@ import { Loader } from "@/components/Loader";
 import { EventCard } from "@/components/event/EventCard";
 import { useEvents } from "@/hooks/useEvents";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
 
 type CalendarLayout = "grid" | "stack";
 
@@ -22,21 +21,22 @@ export function CalendarEmbedView({
   className,
   noEventsLabel,
 }: CalendarEmbedViewProps) {
-  const { events, loading, error } = useEvents();
-  const [pageIndex, setPageIndex] = useState(0);
   const perPage = Math.max(1, itemsPerPage);
-  const totalPages = Math.max(1, Math.ceil(events.length / perPage));
-
-  useEffect(() => {
-    if (pageIndex >= totalPages) {
-      setPageIndex(Math.max(0, totalPages - 1));
-    }
-  }, [pageIndex, totalPages]);
-
-  const startIndex = pageIndex * perPage;
-  const pageEvents = events.slice(startIndex, startIndex + perPage);
-  const hasPager = showPager && events.length > perPage;
-  const isEmpty = !loading && !error && events.length === 0;
+  const {
+    events,
+    loading,
+    error,
+    page,
+    totalItems,
+    nextPage,
+    prevPage,
+    canPrev,
+    canNext,
+  } = useEvents({ perPage });
+  const startIndex = (page - 1) * perPage;
+  const pageEvents = events;
+  const hasPager = showPager;
+  const isEmpty = !loading && !error && totalItems === 0;
   const layoutClasses =
     layout === "stack"
       ? "flex flex-col gap-4"
@@ -78,10 +78,10 @@ export function CalendarEmbedView({
             </div>
             {!loading &&
               layout === "grid" &&
-              events.length > 0 && (
+              totalItems > 0 && (
               <p className="text-center text-sm text-gray-500">
                 Toont {startIndex + 1}–{startIndex + pageEvents.length} van{" "}
-                {events.length} geplande items.
+                {totalItems} geplande items.
               </p>
             )}
           </>
@@ -94,8 +94,8 @@ export function CalendarEmbedView({
                 type="button"
                 variant="primary"
                 className="px-6 py-3 text-base font-semibold shadow-lg shadow-[#E98C00]/60"
-                onClick={() => setPageIndex((prev) => prev - 1)}
-                disabled={pageIndex === 0}
+                onClick={prevPage}
+                disabled={!canPrev}
               >
                 Vorige
               </Button>
@@ -103,8 +103,8 @@ export function CalendarEmbedView({
                 type="button"
                 variant="primary"
                 className="px-6 py-3 text-base font-semibold shadow-lg shadow-[#E98C00]/60"
-                onClick={() => setPageIndex((prev) => prev + 1)}
-                disabled={pageIndex >= totalPages - 1}
+                onClick={nextPage}
+                disabled={!canNext}
               >
                 Volgende
               </Button>

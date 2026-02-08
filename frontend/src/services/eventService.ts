@@ -1,4 +1,4 @@
-import { pbListAll, pbRequest } from "@/lib/pocketbaseClient";
+import { pbListAll, pbListPage, pbRequest } from "@/lib/pocketbaseClient";
 import {
   mapCollection,
   mapEvent,
@@ -9,21 +9,69 @@ import {
   type PocketBaseSermon,
 } from "@/services/pocketbaseMappers";
 import type { EventFull, EventInsert, EventUpdate } from "@/types/types";
+import { startOfTodayIso } from "@/utils/date";
 
-/** List all events with sermons and collections included */
-export async function listEvents(): Promise<EventFull[]> {
-  const [events, sermons, collections] = await Promise.all([
-    pbListAll<PocketBaseEvent>("events", { sort: "startTime" }),
-    pbListAll<PocketBaseSermon>("sermons"),
-    pbListAll<PocketBaseCollection>("collections"),
-  ]);
+type EventPage = {
+  items: EventFull[];
+  page: number;
+  perPage: number;
+  totalPages: number;
+  totalItems: number;
+};
 
-  const eventMap = new Map(
-    events.map((event) => [event.id, mapEvent(event)])
-  );
+export type EventPageMode = "upcoming" | "past";
+
+function buildOrFilter(field: string, values: string[]) {
+  return values.map((value) => `${field}="${value}"`).join(" || ");
+}
+
+/** List events from today with sermons and collections included */
+export async function listEventsPage(
+  page: number,
+  perPage: number,
+  mode: EventPageMode
+): Promise<EventPage> {
+  const todayIso = startOfTodayIso();
+  const isPast = mode === "past";
+
+  const response = await pbListPage<PocketBaseEvent>("events", {
+    page: String(page),
+    perPage: String(perPage),
+    sort: isPast ? "-startTime" : "startTime",
+    filter: isPast
+      ? `startTime < "${todayIso}"`
+      : `startTime >= "${todayIso}"`,
+  });
+
+  const pageEvents = response?.items ?? [];
+  if (pageEvents.length === 0) {
+    return {
+      items: [],
+      page: response?.page ?? page,
+      perPage: response?.perPage ?? perPage,
+      totalPages: response?.totalPages ?? 1,
+      totalItems: response?.totalItems ?? 0,
+    };
+  }
+
+  const orderedEvents = isPast ? [...pageEvents].reverse() : pageEvents;
+  const eventIds = orderedEvents.map((event) => event.id);
+  const sermonFilter = buildOrFilter("event", eventIds);
+
+  const sermons = await pbListAll<PocketBaseSermon>("sermons", {
+    filter: sermonFilter,
+  });
+
   const sermonMap = new Map(
     sermons.map((sermon) => [sermon.id, mapSermon(sermon)])
   );
+  const sermonIds = Array.from(sermonMap.keys());
+  const collections = sermonIds.length
+    ? await pbListAll<PocketBaseCollection>("collections", {
+        filter: buildOrFilter("sermon", sermonIds),
+      })
+    : [];
+
   const collectionsBySermon = new Map<string, ReturnType<typeof mapCollection>[]>();
 
   for (const collection of collections) {
@@ -43,14 +91,25 @@ export async function listEvents(): Promise<EventFull[]> {
     sermonsByEvent.set(sermon.event_id, list);
   }
 
-  return Array.from(eventMap.values()).map((event) => {
-    const eventSermons = sermonsByEvent.get(event.id) ?? [];
+  const items = orderedEvents.map((event) => {
+    const mappedEvent = mapEvent(event);
+    const eventSermons = sermonsByEvent.get(mappedEvent.id) ?? [];
+    const type: EventFull["type"] =
+      eventSermons.length > 0 ? "sermon" : "activity";
     return {
-      ...event,
+      ...mappedEvent,
       sermons: eventSermons,
-      type: eventSermons.length > 0 ? "sermon" : "activity",
+      type,
     };
   });
+
+  return {
+    items,
+    page: response?.page ?? page,
+    perPage: response?.perPage ?? perPage,
+    totalPages: response?.totalPages ?? 1,
+    totalItems: response?.totalItems ?? items.length,
+  };
 }
 
 export async function createEvent(payload: EventInsert) {

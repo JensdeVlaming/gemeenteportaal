@@ -61,15 +61,7 @@ export async function pbListAll<T>(
   let totalPages = 1;
 
   while (page <= totalPages) {
-    const params = new URLSearchParams({
-      page: String(page),
-      perPage: String(perPage),
-      ...query,
-    });
-
-    const data = await pbRequest<ListResponse<T>>(
-      `/api/collections/${collection}/records?${params.toString()}`
-    );
+    const data = await pb.collection(collection).getList<T>(page, perPage, query);
 
     items.push(...(data?.items ?? []));
     totalPages = data?.totalPages ?? 1;
@@ -77,4 +69,15 @@ export async function pbListAll<T>(
   }
 
   return items;
+}
+
+export async function pbListPage<T>(
+  collection: string,
+  query: Record<string, string> = {}
+) {
+  const page = Number(query.page ?? 1);
+  const perPage = Number(query.perPage ?? 30);
+  const { page: _page, perPage: _perPage, ...options } = query;
+
+  return pb.collection(collection).getList<T>(page, perPage, options);
 }
