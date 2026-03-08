@@ -260,6 +260,19 @@ func createSermonKey(start string) string {
 	return start
 }
 
+func toPocketBaseDateFilterValue(iso string) string {
+	if strings.TrimSpace(iso) == "" {
+		return ""
+	}
+
+	parsed, err := time.Parse(time.RFC3339, iso)
+	if err != nil {
+		return iso
+	}
+
+	return parsed.UTC().Format("2006-01-02 15:04:05.000Z")
+}
+
 type ExistingSermonInfo struct {
 	EventID     string
 	SermonID    string
@@ -505,16 +518,32 @@ func markExistingSermons(app core.App, rows []ImportResultRow) ([]ImportResultRo
 		return rows, nil
 	}
 
+	minFilter := toPocketBaseDateFilterValue(rangeData.Min)
+	maxFilter := toPocketBaseDateFilterValue(rangeData.Max)
+
 	events, err := app.FindRecordsByFilter(
 		"events",
 		"startTime >= {:min} && startTime <= {:max}",
 		"startTime",
 		0,
 		0,
-		dbx.Params{"min": rangeData.Min, "max": rangeData.Max},
+		dbx.Params{"min": minFilter, "max": maxFilter},
 	)
-	if err != nil || len(events) == 0 {
+	if err != nil {
 		return rows, nil
+	}
+	if len(events) == 0 {
+		events, err = app.FindRecordsByFilter(
+			"events",
+			"",
+			"startTime",
+			0,
+			0,
+			nil,
+		)
+		if err != nil || len(events) == 0 {
+			return rows, nil
+		}
 	}
 
 	existingMap, err := buildExistingMap(app, events)
