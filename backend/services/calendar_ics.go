@@ -74,8 +74,13 @@ func BuildCalendarICS(app core.App) (string, error) {
 			lines = append(lines, "LOCATION:"+escapeICalText(event.Location))
 		}
 
-		if event.DescriptionText != "" {
-			lines = append(lines, "DESCRIPTION:"+escapeICalText(event.DescriptionText))
+		descriptionValue := event.DescriptionText
+		if event.DescriptionHTML != "" {
+			descriptionValue = event.DescriptionHTML
+		}
+
+		if descriptionValue != "" {
+			lines = append(lines, "DESCRIPTION:"+escapeICalText(descriptionValue))
 		}
 
 		if event.DescriptionHTML != "" {
