@@ -3,6 +3,7 @@ package services
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestEscapeICalText(t *testing.T) {
@@ -38,5 +39,23 @@ func TestFoldICalLine(t *testing.T) {
 
 	if rebuilt != line {
 		t.Fatalf("rebuilt line does not match input")
+	}
+}
+
+func TestParseRecordDateTimePocketBaseFormat(t *testing.T) {
+	parsed, ok := parseRecordDateTime("2026-01-11 09:00:00.000Z")
+	if !ok {
+		t.Fatalf("expected parse success for PocketBase format")
+	}
+
+	if parsed.UTC().Format(time.RFC3339) != "2026-01-11T09:00:00Z" {
+		t.Fatalf("unexpected parsed timestamp: %s", parsed.UTC().Format(time.RFC3339))
+	}
+}
+
+func TestParseRecordDateTimeInvalid(t *testing.T) {
+	_, ok := parseRecordDateTime("geen datum")
+	if ok {
+		t.Fatalf("expected invalid parse result")
 	}
 }

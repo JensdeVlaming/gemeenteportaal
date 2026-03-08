@@ -254,10 +254,24 @@ func parseRecordDateTime(value string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 
-	layouts := []string{time.RFC3339Nano, time.RFC3339, "2006-01-02 15:04:05", "2006-01-02 15:04"}
-	for _, layout := range layouts {
-		parsed, err := time.Parse(layout, value)
-		if err == nil {
+	tryParse := func(input string) (time.Time, bool) {
+		layouts := []string{time.RFC3339Nano, time.RFC3339, "2006-01-02 15:04:05", "2006-01-02 15:04"}
+		for _, layout := range layouts {
+			parsed, err := time.Parse(layout, input)
+			if err == nil {
+				return parsed, true
+			}
+		}
+		return time.Time{}, false
+	}
+
+	if parsed, ok := tryParse(value); ok {
+		return parsed, true
+	}
+
+	if strings.Contains(value, " ") {
+		normalized := strings.Replace(value, " ", "T", 1)
+		if parsed, ok := tryParse(normalized); ok {
 			return parsed, true
 		}
 	}
