@@ -10,6 +10,14 @@ import (
 	"github.com/pocketbase/pocketbase/core"
 )
 
+var amsterdamLocation = func() *time.Location {
+	location, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		return time.UTC
+	}
+	return location
+}()
+
 type ImportStatus string
 
 const (
@@ -118,21 +126,48 @@ func emptyRow(status ImportStatus, message string) ImportResultRow {
 }
 
 func toISO(value string) string {
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return ""
 	}
-	layouts := []string{
+
+	timezoneLayouts := []string{
 		time.RFC3339Nano,
 		time.RFC3339,
+		"2006-01-02 15:04:05.000Z07:00",
+		"2006-01-02 15:04:05Z07:00",
+		"2006-01-02T15:04:05.000Z07:00",
+	}
+	naiveLayouts := []string{
+		"2006-01-02 15:04:05.000",
 		"2006-01-02 15:04:05",
 		"2006-01-02 15:04",
+		"2006-01-02T15:04:05.000",
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
 		"2006-01-02",
 	}
 
-	for _, layout := range layouts {
-		parsed, err := time.Parse(layout, value)
-		if err == nil {
-			return parsed.UTC().Format(time.RFC3339)
+	candidates := []string{value}
+	if strings.Contains(value, " ") {
+		candidates = append(candidates, strings.Replace(value, " ", "T", 1))
+	}
+
+	for _, candidate := range candidates {
+		for _, layout := range timezoneLayouts {
+			parsed, err := time.Parse(layout, candidate)
+			if err == nil {
+				return parsed.UTC().Format(time.RFC3339)
+			}
+		}
+	}
+
+	for _, candidate := range candidates {
+		for _, layout := range naiveLayouts {
+			parsed, err := time.ParseInLocation(layout, candidate, amsterdamLocation)
+			if err == nil {
+				return parsed.UTC().Format(time.RFC3339)
+			}
 		}
 	}
 
