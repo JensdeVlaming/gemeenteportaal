@@ -71,6 +71,7 @@ func registerRoutes(app *pocketbase.PocketBase) {
 				e.Router.GET("/{path...}", apis.Static(os.DirFS(publicDir), true))
 			}
 
+			routes.RegisterCalendarRoutes(e)
 			routes.RegisterSermonImportRoutes(e)
 			return e.Next()
 		},
