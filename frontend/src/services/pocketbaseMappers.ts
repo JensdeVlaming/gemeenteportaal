@@ -24,6 +24,7 @@ export type PocketBaseSermon = {
   id: string;
   event: string;
   speaker: string;
+  dutyElder?: string | null;
   created?: string | null;
   updated?: string | null;
 };
@@ -55,6 +56,7 @@ export function mapSermon(record: PocketBaseSermon): Sermon {
     id: record.id,
     event_id: record.event,
     speaker: record.speaker,
+    duty_elder: record.dutyElder ?? null,
     created_at: record.created ?? null,
   };
 }
@@ -82,10 +84,11 @@ export function toPocketBaseEventPayload(
 }
 
 export function toPocketBaseSermonPayload(payload: Partial<SermonUpdate>) {
-  const { event_id, ...rest } = payload;
+  const { event_id, duty_elder, ...rest } = payload;
   return {
     ...rest,
     ...(event_id ? { event: event_id } : {}),
+    ...(duty_elder !== undefined ? { dutyElder: duty_elder } : {}),
   };
 }
 

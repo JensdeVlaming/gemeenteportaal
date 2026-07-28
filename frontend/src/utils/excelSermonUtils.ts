@@ -56,6 +56,7 @@ export function exportSermonTemplate(collectionCount = 3) {
     "event_start_time",
     "event_end_time",
     "speaker",
+    "duty_elder",
   ];
 
   const collectionHeaders = Array.from({ length: count }, (_, i) => [
@@ -91,6 +92,7 @@ export async function parseSermonsExcel(
   const headers = rawHeaders
     .slice(1)
     .map((value: CellValue) => (value == null ? "" : String(value).trim()));
+  const hasDutyElderHeader = headers.includes("duty_elder");
 
   const rows: Record<string, string>[] = [];
   const lastRow = sheet.rowCount;
@@ -130,6 +132,7 @@ export async function parseSermonsExcel(
       event_start_time: row.event_start_time ?? "",
       event_end_time: row.event_end_time ?? "",
       speaker: row.speaker ?? "",
+      ...(hasDutyElderHeader ? { duty_elder: row.duty_elder ?? "" } : {}),
       collections,
     };
   });
@@ -175,6 +178,7 @@ export function exportSermonsToExcel(
     "event_start_time",
     "event_end_time",
     "speaker",
+    "duty_elder",
     ...Array.from({ length: maxCollections }, (_, i) => [
       `collection_${i + 1}_name`,
       `collection_${i + 1}_description`,
@@ -188,6 +192,7 @@ export function exportSermonsToExcel(
       event_start_time: formatLocalRFC3339(s.event?.start_time ?? ""),
       event_end_time: formatLocalRFC3339(s.event?.end_time ?? ""),
       speaker: s.speaker ?? "",
+      duty_elder: s.duty_elder ?? "",
     };
 
     (s.collections ?? []).forEach((c, idx) => {

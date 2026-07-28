@@ -84,6 +84,7 @@ export function EditEventModal({
   const [error, setError] = useState<string | null>(null);
 
   const [sermonSpeaker, setSermonSpeaker] = useState("");
+  const [sermonDutyElder, setSermonDutyElder] = useState("");
   const [sermonCollections, setSermonCollections] = useState<
     SermonCollectionForm[]
   >([]);
@@ -102,6 +103,7 @@ export function EditEventModal({
       const sermonRecord = event.sermons?.[0];
       if (sermonRecord) {
         setSermonSpeaker(sermonRecord.speaker ?? "");
+        setSermonDutyElder(sermonRecord.duty_elder ?? "");
         setSermonCollections(
           (sermonRecord.collections ?? []).map((collection) => ({
             key: collection.id,
@@ -114,6 +116,7 @@ export function EditEventModal({
         setSermonError(null);
       } else {
         setSermonSpeaker("");
+        setSermonDutyElder("");
         setSermonCollections([]);
         setDeletedCollectionIds([]);
         setSermonError(null);
@@ -124,6 +127,7 @@ export function EditEventModal({
       setDeleting(false);
       setError(null);
       setSermonSpeaker("");
+      setSermonDutyElder("");
       setSermonCollections([]);
       setDeletedCollectionIds([]);
       setSermonError(null);
@@ -261,7 +265,10 @@ export function EditEventModal({
     }
 
     try {
-      await updateSermon(sermon.id, { speaker: sermonSpeaker.trim() });
+      await updateSermon(sermon.id, {
+        speaker: sermonSpeaker.trim(),
+        duty_elder: sermonDutyElder.trim() || null,
+      });
 
       const requests: Promise<unknown>[] = [];
 
@@ -435,7 +442,7 @@ export function EditEventModal({
       <div>
         <h3 className="text-lg font-semibold text-gray-900">Preekgegevens</h3>
         <p className="text-sm text-gray-500">
-          Pas de voorganger en collectedoelen aan.
+          Pas de voorganger, ouderling en collectedoelen aan.
         </p>
       </div>
 
@@ -449,6 +456,19 @@ export function EditEventModal({
           onChange={(event) => setSermonSpeaker(event.target.value)}
           className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#E98C00] focus:outline-none focus:ring-1 focus:ring-[#E98C00]"
           placeholder="Naam van de voorganger"
+        />
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          Ouderling van dienst
+        </label>
+        <input
+          type="text"
+          value={sermonDutyElder}
+          onChange={(event) => setSermonDutyElder(event.target.value)}
+          className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#E98C00] focus:outline-none focus:ring-1 focus:ring-[#E98C00]"
+          placeholder="Optionele naam van de ouderling"
         />
       </div>
 

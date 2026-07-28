@@ -13,6 +13,7 @@ export type Sermon = {
   id: string;
   event_id: string;
   speaker: string;
+  duty_elder: string | null;
   created_at: string | null;
 };
 
@@ -35,6 +36,7 @@ export type EventInsert = {
 export type SermonInsert = {
   event_id: string;
   speaker: string;
+  duty_elder?: string | null;
 };
 
 export type CollectionInsert = {

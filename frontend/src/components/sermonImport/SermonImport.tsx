@@ -48,8 +48,8 @@ export default function SermonImport() {
             Preken importeren
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Upload het Excel-sjabloon of exporteer de huidige preken. Tijdens de
-            preview kun je controleren welke rijen worden geïmporteerd.
+            Upload het Excel-sjabloon of een compact CSV-ouderlingenrooster.
+            Tijdens de preview kun je controleren welke rijen worden geïmporteerd.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function SermonImport() {
 
       {loading && (
         <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white">
-          <Loader label="Excel aan het verwerken…" />
+          <Loader label="Importbestand verwerken…" />
         </div>
       )}
 
@@ -103,7 +103,7 @@ function IdleState() {
     <div className="rounded-lg border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
       <p className="font-medium text-gray-800">Nog geen bestand geselecteerd</p>
       <p>
-        Download het template of kies &ldquo;Upload Excel&rdquo; om een
+        Download het template of kies &ldquo;Upload bestand&rdquo; om een
         voorvertoning te zien voordat je importeert.
       </p>
     </div>
@@ -115,7 +115,7 @@ function StepIndicator({ step }: { step: ImportStep }) {
     {
       id: ImportStep.Idle,
       label: "Bestand kiezen",
-      description: "Selecteer het Excel-bestand",
+      description: "Selecteer een Excel- of CSV-bestand",
     },
     {
       id: ImportStep.Preview,
@@ -259,7 +259,7 @@ function ImportActionBar({
 }) {
   if (!hasRows && step === ImportStep.Idle) return null;
 
-  let helperText = "Upload een Excel-bestand om te beginnen.";
+  let helperText = "Upload een Excel- of CSV-bestand om te beginnen.";
   if (step === ImportStep.Preview) {
     helperText = canImport
       ? "Alles ziet er goed uit. Klik op Bevestig import om verder te gaan."

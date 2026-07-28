@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { EventFull } from "@/types/types";
 import type { KeyboardEvent } from "react";
-import { Calendar, Clock, HandCoins, MapPin, User } from "lucide-react";
+import { Calendar, Clock, HandCoins, MapPin, User, UserCheck } from "lucide-react";
 
 interface EventCardProps {
   event: EventFull;
@@ -103,6 +103,16 @@ export function EventCard({ event, onSelect, className }: EventCardProps) {
                     {sermon.speaker}
                   </span>
                 </div>
+
+                {sermon.duty_elder && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-800">
+                    <UserCheck className="h-4 w-4 text-[#E98C00]" />
+                    <span>
+                      <span className="font-semibold">Ouderling van dienst:</span>{" "}
+                      {sermon.duty_elder}
+                    </span>
+                  </div>
+                )}
 
                 {/* Collections */}
                 {sermon.collections?.length > 0 && (

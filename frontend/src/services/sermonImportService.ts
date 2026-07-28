@@ -1,5 +1,6 @@
 import { pbRequest } from "@/lib/pocketbaseClient";
 import { ImportStatus, type ParsedSermonRow } from "@/types/sermonImport";
+import { parseDutyElderCsv } from "@/utils/dutyElderCsv";
 import { parseSermonsExcel } from "@/utils/excelSermonUtils";
 
 type SermonFunctionResponse = {
@@ -12,6 +13,7 @@ function emptyRow(status: ImportStatus, message: string): ParsedSermonRow {
     event_start_time: "",
     event_end_time: "",
     speaker: "",
+    duty_elder: "",
     collections: [],
     status,
     message,
@@ -52,12 +54,27 @@ async function callSermonFunction(
 export async function loadSermonsFromFile(file: File) {
   let parsed: ParsedSermonRow[];
   try {
-    parsed = await parseSermonsExcel(file);
-  } catch {
+    if (file.name.toLowerCase().endsWith(".csv")) {
+      const dutyElderRows = await parseDutyElderCsv(file);
+      parsed = dutyElderRows.map((row) => ({
+        import_mode: "duty_elder",
+        event_title: "",
+        event_start_time: row.event_start_time,
+        event_end_time: "",
+        speaker: "",
+        duty_elder: row.duty_elder,
+        collections: [],
+      }));
+    } else {
+      parsed = await parseSermonsExcel(file);
+    }
+  } catch (err) {
     return [
       emptyRow(
         ImportStatus.Fout,
-        "Fout bij het inlezen van het Excel-bestand."
+        err instanceof Error
+          ? err.message
+          : "Fout bij het inlezen van het importbestand."
       ),
     ];
   }

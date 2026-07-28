@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -38,19 +39,23 @@ type ImportCollection struct {
 }
 
 type ImportRow struct {
+	ImportMode     *string            `json:"import_mode,omitempty"`
 	EventTitle     *string            `json:"event_title"`
 	EventStartTime *string            `json:"event_start_time"`
 	EventEndTime   *string            `json:"event_end_time"`
 	Speaker        *string            `json:"speaker"`
+	DutyElder      *string            `json:"duty_elder,omitempty"`
 	Collections    []ImportCollection `json:"collections"`
 	Message        *string            `json:"message,omitempty"`
 }
 
 type ImportResultRow struct {
+	ImportMode      string             `json:"import_mode,omitempty"`
 	EventTitle      string             `json:"event_title"`
 	EventStartTime  string             `json:"event_start_time"`
 	EventEndTime    string             `json:"event_end_time"`
 	Speaker         string             `json:"speaker"`
+	DutyElder       *string            `json:"duty_elder,omitempty"`
 	Collections     []ImportCollection `json:"collections"`
 	Status          ImportStatus       `json:"status"`
 	Message         *string            `json:"message,omitempty"`
@@ -58,6 +63,7 @@ type ImportResultRow struct {
 	SermonID        *string            `json:"sermon_id,omitempty"`
 	CollectionDiffs *CollectionDiffs   `json:"collectionDiffs,omitempty"`
 	SpeakerDiff     *ValueDiff         `json:"speakerDiff,omitempty"`
+	DutyElderDiff   *ValueDiff         `json:"dutyElderDiff,omitempty"`
 	TitleDiff       *ValueDiff         `json:"titleDiff,omitempty"`
 }
 
@@ -76,6 +82,7 @@ type NormalizedRow struct {
 	EventStartTime string
 	EventEndTime   string
 	Speaker        string
+	DutyElder      *string
 	Collections    []ImportCollection
 	Message        *string
 }
@@ -103,11 +110,18 @@ func normalizeRow(row ImportRow) NormalizedRow {
 		}
 	}
 
+	var dutyElder *string
+	if row.DutyElder != nil {
+		trimmed := strings.TrimSpace(*row.DutyElder)
+		dutyElder = &trimmed
+	}
+
 	return NormalizedRow{
 		EventTitle:     trimValue(row.EventTitle),
 		EventStartTime: trimValue(row.EventStartTime),
 		EventEndTime:   trimValue(row.EventEndTime),
 		Speaker:        trimValue(row.Speaker),
+		DutyElder:      dutyElder,
 		Collections:    collections,
 		Message:        row.Message,
 	}
@@ -180,6 +194,7 @@ func invalidRow(row NormalizedRow, message string) ImportResultRow {
 		EventStartTime: row.EventStartTime,
 		EventEndTime:   row.EventEndTime,
 		Speaker:        row.Speaker,
+		DutyElder:      row.DutyElder,
 		Collections:    row.Collections,
 		Status:         ImportStatusOngeldig,
 		Message:        &message,
@@ -212,6 +227,7 @@ func validateRow(row NormalizedRow) ImportResultRow {
 		EventStartTime: startISO,
 		EventEndTime:   endISO,
 		Speaker:        row.Speaker,
+		DutyElder:      row.DutyElder,
 		Collections:    row.Collections,
 		Status:         ImportStatusNieuw,
 		Message:        row.Message,
@@ -280,6 +296,7 @@ type ExistingSermonInfo struct {
 	StartTime   string
 	EndTime     string
 	Speaker     string
+	DutyElder   string
 	Collections []ImportCollection
 }
 
@@ -372,6 +389,7 @@ func buildExistingMap(app core.App, events []*core.Record) (map[string]ExistingS
 				StartTime:   startISO,
 				EndTime:     toISO(event.GetString("endTime")),
 				Speaker:     sermon.GetString("speaker"),
+				DutyElder:   sermon.GetString("dutyElder"),
 				Collections: collectionRecords,
 			}
 		}
@@ -489,6 +507,18 @@ func getSpeakerDiff(row ImportResultRow, existing ExistingSermonInfo) *ValueDiff
 	return &ValueDiff{Before: nullableString(existing.Speaker), After: nullableString(row.Speaker)}
 }
 
+func getDutyElderDiff(row ImportResultRow, existing ExistingSermonInfo) *ValueDiff {
+	if row.DutyElder == nil {
+		return nil
+	}
+	before := strings.TrimSpace(existing.DutyElder)
+	after := strings.TrimSpace(*row.DutyElder)
+	if strings.EqualFold(before, after) {
+		return nil
+	}
+	return &ValueDiff{Before: nullableString(existing.DutyElder), After: nullableString(*row.DutyElder)}
+}
+
 func getTitleDiff(row ImportResultRow, existing ExistingSermonInfo) *ValueDiff {
 	before := strings.TrimSpace(existing.EventTitle)
 	after := strings.TrimSpace(row.EventTitle)
@@ -503,9 +533,10 @@ func hasChanges(row ImportResultRow, existing ExistingSermonInfo) bool {
 	startChanged := row.EventStartTime != existing.StartTime
 	endChanged := row.EventEndTime != existing.EndTime
 	speakerChanged := !strings.EqualFold(strings.TrimSpace(row.Speaker), strings.TrimSpace(existing.Speaker))
+	dutyElderChanged := row.DutyElder != nil && !strings.EqualFold(strings.TrimSpace(*row.DutyElder), strings.TrimSpace(existing.DutyElder))
 	collectionsChanged := !collectionsEqual(row.Collections, existing.Collections)
 
-	return titleChanged || startChanged || endChanged || speakerChanged || collectionsChanged
+	return titleChanged || startChanged || endChanged || speakerChanged || dutyElderChanged || collectionsChanged
 }
 
 func markExistingSermons(app core.App, rows []ImportResultRow) ([]ImportResultRow, error) {
@@ -586,6 +617,7 @@ func markExistingSermons(app core.App, rows []ImportResultRow) ([]ImportResultRo
 		diffs := getCollectionDiffs(row.Collections, existing.Collections)
 		row.CollectionDiffs = &diffs
 		row.SpeakerDiff = getSpeakerDiff(row, existing)
+		row.DutyElderDiff = getDutyElderDiff(row, existing)
 		row.TitleDiff = getTitleDiff(row, existing)
 
 		results = append(results, row)
@@ -595,11 +627,29 @@ func markExistingSermons(app core.App, rows []ImportResultRow) ([]ImportResultRo
 }
 
 func CheckSermonRows(app core.App, rows []ImportRow) ([]ImportResultRow, error) {
+	dutyElderOnly, err := isDutyElderOnlyImport(rows)
+	if err != nil {
+		return nil, err
+	}
+	if dutyElderOnly {
+		checked, checkErr := CheckDutyElderRows(app, toDutyElderRows(rows))
+		return fromDutyElderResults(checked), checkErr
+	}
+
 	validated := validateSermonRows(rows)
 	return markExistingSermons(app, validated)
 }
 
 func ImportSermonRows(app core.App, rows []ImportRow) ([]ImportResultRow, error) {
+	dutyElderOnly, modeErr := isDutyElderOnlyImport(rows)
+	if modeErr != nil {
+		return nil, modeErr
+	}
+	if dutyElderOnly {
+		imported, importErr := ImportDutyElderRows(app, toDutyElderRows(rows))
+		return fromDutyElderResults(imported), importErr
+	}
+
 	validated, err := CheckSermonRows(app, rows)
 	if err != nil {
 		return validated, err
@@ -654,6 +704,48 @@ func ImportSermonRows(app core.App, rows []ImportRow) ([]ImportResultRow, error)
 	return results, nil
 }
 
+func isDutyElderOnlyImport(rows []ImportRow) (bool, error) {
+	dutyElderRows := 0
+	for _, row := range rows {
+		if row.ImportMode != nil && strings.TrimSpace(*row.ImportMode) == "duty_elder" {
+			dutyElderRows++
+		}
+	}
+
+	if dutyElderRows > 0 && dutyElderRows != len(rows) {
+		return false, errors.New("Een import mag geen preek- en ouderlingenrijen combineren.")
+	}
+	return dutyElderRows > 0, nil
+}
+
+func toDutyElderRows(rows []ImportRow) []DutyElderImportRow {
+	result := make([]DutyElderImportRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, DutyElderImportRow{
+			EventStartTime: row.EventStartTime,
+			DutyElder:      row.DutyElder,
+		})
+	}
+	return result
+}
+
+func fromDutyElderResults(rows []DutyElderImportResult) []ImportResultRow {
+	result := make([]ImportResultRow, 0, len(rows))
+	for _, row := range rows {
+		dutyElder := row.DutyElder
+		result = append(result, ImportResultRow{
+			ImportMode:     "duty_elder",
+			EventStartTime: row.EventStartTime,
+			DutyElder:      &dutyElder,
+			Collections:    []ImportCollection{},
+			Status:         row.Status,
+			Message:        row.Message,
+			SermonID:       row.SermonID,
+		})
+	}
+	return result
+}
+
 func insertEvent(app core.App, row ImportResultRow) (string, error) {
 	collection, err := app.FindCollectionByNameOrId("events")
 	if err != nil {
@@ -689,6 +781,9 @@ func insertSermon(app core.App, eventID string, row ImportResultRow) (string, er
 		speaker = "Onbekende spreker"
 	}
 	record.Set("speaker", speaker)
+	if row.DutyElder != nil {
+		record.Set("dutyElder", strings.TrimSpace(*row.DutyElder))
+	}
 
 	if err := app.Save(record); err != nil {
 		return "", err
@@ -754,6 +849,9 @@ func updateSermon(app core.App, sermonID string, row ImportResultRow) error {
 		speaker = "Onbekende spreker"
 	}
 	record.Set("speaker", speaker)
+	if row.DutyElder != nil {
+		record.Set("dutyElder", strings.TrimSpace(*row.DutyElder))
+	}
 	return app.Save(record)
 }
 
@@ -859,4 +957,170 @@ func nullableString(value string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+type DutyElderImportRow struct {
+	EventStartTime *string `json:"event_start_time"`
+	DutyElder      *string `json:"duty_elder"`
+}
+
+type DutyElderImportResult struct {
+	EventStartTime string       `json:"event_start_time"`
+	DutyElder      string       `json:"duty_elder"`
+	Status         ImportStatus `json:"status"`
+	Message        *string      `json:"message,omitempty"`
+	SermonID       *string      `json:"sermon_id,omitempty"`
+}
+
+func CheckDutyElderRows(app core.App, rows []DutyElderImportRow) ([]DutyElderImportResult, error) {
+	if len(rows) == 0 {
+		message := "Het bestand bevat geen gegevens."
+		return []DutyElderImportResult{{Status: ImportStatusLeeg, Message: &message}}, nil
+	}
+
+	results := make([]DutyElderImportResult, 0, len(rows))
+	seen := map[string]struct{}{}
+
+	for _, row := range rows {
+		startValue := trimValue(row.EventStartTime)
+		elder := trimValue(row.DutyElder)
+		result := DutyElderImportResult{EventStartTime: startValue, DutyElder: elder}
+
+		startISO := toISO(startValue)
+		if startISO == "" {
+			message := "Ongeldige datum of tijd."
+			result.Status = ImportStatusOngeldig
+			result.Message = &message
+			results = append(results, result)
+			continue
+		}
+		result.EventStartTime = startISO
+
+		if elder == "" {
+			message := "Ontbrekende ouderling van dienst."
+			result.Status = ImportStatusOngeldig
+			result.Message = &message
+			results = append(results, result)
+			continue
+		}
+
+		if _, duplicate := seen[startISO]; duplicate {
+			message := "Dubbele dienst in het bestand."
+			result.Status = ImportStatusDubbel
+			result.Message = &message
+			results = append(results, result)
+			continue
+		}
+		seen[startISO] = struct{}{}
+
+		sermon, err := findSermonByStartTime(app, startISO)
+		if err != nil {
+			message := err.Error()
+			result.Status = ImportStatusOngeldig
+			result.Message = &message
+			results = append(results, result)
+			continue
+		}
+
+		result.SermonID = &sermon.Id
+		current := strings.TrimSpace(sermon.GetString("dutyElder"))
+		if strings.EqualFold(current, elder) {
+			message := "Ouderling van dienst is al gelijk."
+			result.Status = ImportStatusOvergeslagen
+			result.Message = &message
+		} else {
+			message := "Bestaande dienst wordt bijgewerkt."
+			result.Status = ImportStatusBestaand
+			result.Message = &message
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+func ImportDutyElderRows(app core.App, rows []DutyElderImportRow) ([]DutyElderImportResult, error) {
+	results, err := CheckDutyElderRows(app, rows)
+	if err != nil {
+		return results, err
+	}
+
+	for _, result := range results {
+		if result.Status == ImportStatusOngeldig || result.Status == ImportStatusDubbel || result.Status == ImportStatusFout || result.Status == ImportStatusLeeg {
+			return results, nil
+		}
+	}
+
+	err = app.RunInTransaction(func(txApp core.App) error {
+		for _, result := range results {
+			if result.Status != ImportStatusBestaand || result.SermonID == nil {
+				continue
+			}
+
+			record, findErr := txApp.FindRecordById("sermons", *result.SermonID)
+			if findErr != nil {
+				return findErr
+			}
+			record.Set("dutyElder", result.DutyElder)
+			if saveErr := txApp.Save(record); saveErr != nil {
+				return saveErr
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return results, err
+	}
+
+	for index := range results {
+		if results[index].Status == ImportStatusBestaand {
+			message := "Ouderling van dienst is bijgewerkt."
+			results[index].Status = ImportStatusHergebruikt
+			results[index].Message = &message
+		}
+	}
+
+	return results, nil
+}
+
+func findSermonByStartTime(app core.App, startISO string) (*core.Record, error) {
+	startFilter := toPocketBaseDateFilterValue(startISO)
+	events, err := app.FindRecordsByFilter(
+		"events",
+		"startTime = {:start}",
+		"",
+		0,
+		0,
+		dbx.Params{"start": startFilter},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(events) == 0 {
+		return nil, fmt.Errorf("Geen bestaande dienst gevonden op %s.", startISO)
+	}
+	if len(events) > 1 {
+		return nil, fmt.Errorf("Meerdere diensten gevonden op %s.", startISO)
+	}
+
+	sermons, err := app.FindRecordsByFilter(
+		"sermons",
+		"event = {:eventId}",
+		"",
+		0,
+		0,
+		dbx.Params{"eventId": events[0].Id},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(sermons) == 0 {
+		return nil, errors.New("De gevonden dienst heeft geen gekoppelde preekgegevens.")
+	}
+	if len(sermons) > 1 {
+		return nil, errors.New("De gevonden dienst heeft meerdere gekoppelde preken.")
+	}
+
+	return sermons[0], nil
 }
