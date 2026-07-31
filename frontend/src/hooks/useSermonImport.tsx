@@ -11,7 +11,7 @@ import { useState } from "react";
 
 /**
  * useSermonImport
- * - Leest Excel in (client-side)
+ * - Leest Excel of een compact ouderlingenrooster in (client-side)
  * - Valideert basale structuur
  * - Stuurt naar edge function voor batch import
  */
@@ -25,7 +25,7 @@ export function useSermonImport(options?: UseSermonImportOptions) {
   const [step, setStep] = useState<ImportStep>(ImportStep.Idle);
   const [error, setError] = useState<string | null>(null);
 
-  /** ⬆️ Upload & parse Excel */
+  /** Upload en verwerk Excel of CSV. */
   async function handleFileUpload(file: File) {
     setLoading(true);
     setError(null);
@@ -38,7 +38,7 @@ export function useSermonImport(options?: UseSermonImportOptions) {
       setError(
         err instanceof Error
           ? err.message
-          : "Kon het Excel-bestand niet verwerken."
+          : "Kon het importbestand niet verwerken."
       );
     } finally {
       setLoading(false);
@@ -84,7 +84,14 @@ export function useSermonImport(options?: UseSermonImportOptions) {
     status === ImportStatus.Fout ||
     status === ImportStatus.Leeg;
 
-  const hasInvalidRows = rows.some((row) => isInvalidStatus(row.status));
+  const isDutyElderImport = rows.some(
+    (row) => row.import_mode === "duty_elder"
+  );
+  const hasInvalidRows = rows.some(
+    (row) =>
+      isInvalidStatus(row.status) ||
+      (isDutyElderImport && row.status === ImportStatus.Dubbel)
+  );
 
   const canImport = rows.length > 0 && !hasInvalidRows;
 

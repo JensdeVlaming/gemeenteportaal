@@ -24,6 +24,7 @@ If no token is set, the endpoint is public.
 When an event has related sermon data, the feed includes:
 
 - Speaker (`sermons.speaker`)
+- Duty elder (`sermons.dutyElder`), when present
 - Collections (`collections.name` and optional `collections.description`)
 - Optional livestream/liturgy links via env vars
 

@@ -59,3 +59,31 @@ func TestParseRecordDateTimeInvalid(t *testing.T) {
 		t.Fatalf("expected invalid parse result")
 	}
 }
+
+func TestAppendDutyEldersAddsPlainAndHTMLLinesAfterSpeaker(t *testing.T) {
+	plain, html := appendDutyElders(
+		[]string{"Voorganger: ds. Voorbeeld", ""},
+		[]string{"<strong>Voorganger:</strong> ds. Voorbeeld", ""},
+		[]string{"E. Felix"},
+	)
+
+	if got := strings.Join(plain, "\n"); got != "Voorganger: ds. Voorbeeld\nOuderling van dienst: E. Felix\n" {
+		t.Fatalf("unexpected plain description: %q", got)
+	}
+	if got := strings.Join(html, "<br />"); got != "<strong>Voorganger:</strong> ds. Voorbeeld<br /><strong>Ouderling van dienst:</strong> E. Felix<br />" {
+		t.Fatalf("unexpected HTML description: %q", got)
+	}
+}
+
+func TestAppendDutyEldersOmitsEmptyValue(t *testing.T) {
+	plain := []string{"Voorganger: ds. Voorbeeld", ""}
+	html := []string{"<strong>Voorganger:</strong> ds. Voorbeeld", ""}
+
+	gotPlain, gotHTML := appendDutyElders(plain, html, nil)
+	if strings.Join(gotPlain, "\n") != strings.Join(plain, "\n") {
+		t.Fatal("plain description should remain unchanged")
+	}
+	if strings.Join(gotHTML, "<br />") != strings.Join(html, "<br />") {
+		t.Fatal("HTML description should remain unchanged")
+	}
+}

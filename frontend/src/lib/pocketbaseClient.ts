@@ -71,7 +71,9 @@ export async function pbListPage<T>(
 ) {
   const page = Number(query.page ?? 1);
   const perPage = Number(query.perPage ?? 30);
-  const { page: _page, perPage: _perPage, ...options } = query;
+  const options = { ...query };
+  delete options.page;
+  delete options.perPage;
 
   return pb.collection(collection).getList<T>(page, perPage, options);
 }

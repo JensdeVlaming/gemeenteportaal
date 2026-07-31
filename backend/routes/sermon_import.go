@@ -5,6 +5,7 @@ import (
 
 	"backend/services"
 
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 )
 
@@ -13,8 +14,8 @@ type sermonPayload struct {
 }
 
 func RegisterSermonImportRoutes(e *core.ServeEvent) {
-	e.Router.POST("/api/sermon-check", handleSermonCheck)
-	e.Router.POST("/api/sermon-import", handleSermonImport)
+	e.Router.POST("/api/sermon-check", handleSermonCheck).Bind(apis.RequireAuth())
+	e.Router.POST("/api/sermon-import", handleSermonImport).Bind(apis.RequireAuth())
 }
 
 func handleSermonCheck(e *core.RequestEvent) error {

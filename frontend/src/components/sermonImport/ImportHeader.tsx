@@ -42,7 +42,7 @@ export function ImportHeader({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".xlsx,.xls"
+        accept=".xlsx,.xls,.csv,text/csv"
         className="hidden"
         onChange={onUpload}
         disabled={disabled}
@@ -53,7 +53,7 @@ export function ImportHeader({
         onClick={handleUploadClick}
         disabled={disabled}
       >
-        Upload Excel
+        Upload bestand
       </Button>
     </div>
   );

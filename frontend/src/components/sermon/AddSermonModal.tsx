@@ -31,6 +31,7 @@ function createFormState() {
     start: "",
     end: "",
     speaker: "",
+    dutyElder: "",
     collections: [] as CollectionForm[],
   };
 }
@@ -154,6 +155,7 @@ export default function AddSermonModal({
       event_start_time: toIsoString(form.start),
       event_end_time: toIsoString(form.end),
       speaker: form.speaker.trim(),
+      duty_elder: form.dutyElder.trim(),
       collections: parsedCollections,
     };
 
@@ -207,7 +209,7 @@ export default function AddSermonModal({
                 Preek toevoegen
               </h2>
               <p className="text-sm text-gray-500">
-                Voeg een dienst + voorganger handmatig toe zonder Excel.
+                Voeg dienstgegevens handmatig toe zonder Excel.
               </p>
             </div>
             <button
@@ -272,6 +274,19 @@ export default function AddSermonModal({
               onChange={handleChange("speaker")}
               className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#E98C00] focus:outline-none focus:ring-1 focus:ring-[#E98C00]"
               placeholder="Naam van de voorganger"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Ouderling van dienst
+            </label>
+            <input
+              type="text"
+              value={form.dutyElder}
+              onChange={handleChange("dutyElder")}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#E98C00] focus:outline-none focus:ring-1 focus:ring-[#E98C00]"
+              placeholder="Optionele naam van de ouderling"
             />
           </div>
 

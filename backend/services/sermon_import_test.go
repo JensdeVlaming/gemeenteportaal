@@ -46,3 +46,49 @@ func TestToPocketBaseDateFilterValueKeepsUnknownInput(t *testing.T) {
 		t.Fatalf("toPocketBaseDateFilterValue() = %q, want %q", got, want)
 	}
 }
+
+func TestNormalizeRowPreservesMissingDutyElder(t *testing.T) {
+	normalized := normalizeRow(ImportRow{})
+	if normalized.DutyElder != nil {
+		t.Fatalf("missing duty elder should remain nil, got %q", *normalized.DutyElder)
+	}
+}
+
+func TestNormalizeRowPreservesExplicitEmptyDutyElder(t *testing.T) {
+	value := "  "
+	normalized := normalizeRow(ImportRow{DutyElder: &value})
+	if normalized.DutyElder == nil || *normalized.DutyElder != "" {
+		t.Fatalf("explicit empty duty elder should remain an empty pointer: %#v", normalized.DutyElder)
+	}
+}
+
+func TestDutyElderChangeDetectionHonorsTriState(t *testing.T) {
+	existing := ExistingSermonInfo{
+		EventTitle: "Dienst",
+		StartTime:  "2026-08-02T08:00:00Z",
+		EndTime:    "2026-08-02T09:00:00Z",
+		Speaker:    "ds. Voorbeeld",
+		DutyElder:  "D. de Lang",
+	}
+	base := ImportResultRow{
+		EventTitle:     existing.EventTitle,
+		EventStartTime: existing.StartTime,
+		EventEndTime:   existing.EndTime,
+		Speaker:        existing.Speaker,
+		Collections:    []ImportCollection{},
+	}
+
+	if hasChanges(base, existing) {
+		t.Fatal("a missing duty elder field should preserve the existing value")
+	}
+
+	empty := ""
+	base.DutyElder = &empty
+	if !hasChanges(base, existing) {
+		t.Fatal("an explicitly empty duty elder should be detected as a clear operation")
+	}
+	diff := getDutyElderDiff(base, existing)
+	if diff == nil || diff.Before == nil || *diff.Before != "D. de Lang" || diff.After != nil {
+		t.Fatalf("unexpected duty elder diff: %#v", diff)
+	}
+}

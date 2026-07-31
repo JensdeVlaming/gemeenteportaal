@@ -178,12 +178,18 @@ func buildEventDescription(app core.App, eventRecord *core.Record, livestreamURL
 	}
 
 	speakers := make([]string, 0, len(sermons))
+	dutyElders := make([]string, 0, len(sermons))
 	collections := make([]string, 0)
 
 	for _, sermon := range sermons {
 		speaker := strings.TrimSpace(sermon.GetString("speaker"))
 		if speaker != "" {
 			speakers = append(speakers, speaker)
+		}
+
+		dutyElder := strings.TrimSpace(sermon.GetString("dutyElder"))
+		if dutyElder != "" && !containsFold(dutyElders, dutyElder) {
+			dutyElders = append(dutyElders, dutyElder)
 		}
 
 		collectionRecords, err := app.FindRecordsByFilter(
@@ -225,6 +231,8 @@ func buildEventDescription(app core.App, eventRecord *core.Record, livestreamURL
 		"",
 	}
 
+	plainLines, htmlParts = appendDutyElders(plainLines, htmlParts, dutyElders)
+
 	if len(collections) > 0 {
 		plainLines = append(plainLines, "Collectedoelen:")
 		htmlParts = append(htmlParts, "<strong>Collectedoelen:</strong>")
@@ -251,6 +259,26 @@ func buildEventDescription(app core.App, eventRecord *core.Record, livestreamURL
 	}
 
 	return strings.Join(plainLines, "\n"), strings.Join(htmlParts, "<br />"), nil
+}
+
+func appendDutyElders(plainLines, htmlParts, dutyElders []string) ([]string, []string) {
+	if len(dutyElders) == 0 {
+		return plainLines, htmlParts
+	}
+
+	label := strings.Join(dutyElders, ", ")
+	plainLines = append(plainLines[:len(plainLines)-1], "Ouderling van dienst: "+label, "")
+	htmlParts = append(htmlParts[:len(htmlParts)-1], "<strong>Ouderling van dienst:</strong> "+label, "")
+	return plainLines, htmlParts
+}
+
+func containsFold(values []string, candidate string) bool {
+	for _, value := range values {
+		if strings.EqualFold(value, candidate) {
+			return true
+		}
+	}
+	return false
 }
 
 func parseRecordDateTime(value string) (time.Time, bool) {

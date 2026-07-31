@@ -27,10 +27,12 @@ export type ParsedCollection = {
 };
 
 export type ParsedSermonRow = {
+  import_mode?: "duty_elder";
   event_title: string;
   event_start_time: string;
   event_end_time: string;
   speaker: string;
+  duty_elder?: string;
   collections: ParsedCollection[];
   status?: ImportStatus;
   message?: string;
@@ -39,6 +41,10 @@ export type ParsedSermonRow = {
     removed: string[];
   };
   speakerDiff?: {
+    before?: string | null;
+    after?: string | null;
+  };
+  dutyElderDiff?: {
     before?: string | null;
     after?: string | null;
   };

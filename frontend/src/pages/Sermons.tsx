@@ -16,8 +16,8 @@ export default function Sermons() {
         <div>
           <h2 className="text-2xl font-semibold text-gray-900">Preken</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Bekijk de bestaande preken. Wil je een Excel importeren? Gebruik dan
-            de speciale importpagina.
+            Bekijk de bestaande preken. Wil je gegevens importeren? Gebruik dan
+            de importpagina.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -7,6 +7,9 @@ import clsx from "clsx";
  */
 export function ImportPreviewTable({ rows }: { rows: ParsedSermonRow[] }) {
   if (!rows.length) return null;
+  const isDutyElderImport = rows.every(
+    (row) => row.import_mode === "duty_elder"
+  );
 
   function formatDateTime(start: string, end: string) {
     if (!start) return "—";
@@ -60,9 +63,10 @@ export function ImportPreviewTable({ rows }: { rows: ParsedSermonRow[] }) {
         <thead className="bg-gray-50 text-gray-700 font-semibold">
           <tr>
             <th className="p-2">Datum & tijd</th>
-            <th className="p-2">Titel</th>
-            <th className="p-2">Spreker</th>
-            <th className="p-2">Collectes</th>
+            {!isDutyElderImport && <th className="p-2">Titel</th>}
+            {!isDutyElderImport && <th className="p-2">Spreker</th>}
+            <th className="p-2">Ouderling van dienst</th>
+            {!isDutyElderImport && <th className="p-2">Collectes</th>}
             <th className="p-2">Status</th>
             <th className="p-2">Melding</th>
           </tr>
@@ -76,37 +80,51 @@ export function ImportPreviewTable({ rows }: { rows: ParsedSermonRow[] }) {
               <td className="p-2 whitespace-nowrap">
                 {formatDateTime(r.event_start_time, r.event_end_time)}
               </td>
+              {!isDutyElderImport && (
+                <td className="p-2">
+                  {r.event_title || "—"}
+                  {r.titleDiff && (
+                    <p className="mt-1 text-xs text-orange-600">
+                      {r.titleDiff.before ?? "—"} → {r.titleDiff.after ?? "—"}
+                    </p>
+                  )}
+                </td>
+              )}
+              {!isDutyElderImport && (
+                <td className="p-2">
+                  {r.speaker || "—"}
+                  {r.speakerDiff ? (
+                    <p className="mt-1 text-xs text-orange-600">
+                      {r.speakerDiff.before ?? "—"} → {r.speakerDiff.after ?? "—"}
+                    </p>
+                  ) : null}
+                </td>
+              )}
               <td className="p-2">
-                {r.event_title || "—"}
-                {r.titleDiff && (
+                {r.duty_elder || "—"}
+                {r.dutyElderDiff ? (
                   <p className="mt-1 text-xs text-orange-600">
-                    {r.titleDiff.before ?? "—"} → {r.titleDiff.after ?? "—"}
-                  </p>
-                )}
-              </td>
-              <td className="p-2">
-                {r.speaker || "—"}
-                {r.speakerDiff ? (
-                  <p className="mt-1 text-xs text-orange-600">
-                    {r.speakerDiff.before ?? "—"} → {r.speakerDiff.after ?? "—"}
+                    {r.dutyElderDiff.before ?? "—"} → {r.dutyElderDiff.after ?? "—"}
                   </p>
                 ) : null}
               </td>
-              <td className="p-2">
-                {r.collections?.length
-                  ? r.collections.map((c) => c.name).join(", ")
-                  : "Geen"}
-                {r.collectionDiffs?.added?.length ? (
-                  <p className="mt-1 text-xs text-green-600">
-                    Toegevoegd: {r.collectionDiffs.added.join(", ")}
-                  </p>
-                ) : null}
-                {r.collectionDiffs?.removed?.length ? (
-                  <p className="mt-1 text-xs text-red-600">
-                    Verwijderd: {r.collectionDiffs.removed.join(", ")}
-                  </p>
-                ) : null}
-              </td>
+              {!isDutyElderImport && (
+                <td className="p-2">
+                  {r.collections?.length
+                    ? r.collections.map((c) => c.name).join(", ")
+                    : "Geen"}
+                  {r.collectionDiffs?.added?.length ? (
+                    <p className="mt-1 text-xs text-green-600">
+                      Toegevoegd: {r.collectionDiffs.added.join(", ")}
+                    </p>
+                  ) : null}
+                  {r.collectionDiffs?.removed?.length ? (
+                    <p className="mt-1 text-xs text-red-600">
+                      Verwijderd: {r.collectionDiffs.removed.join(", ")}
+                    </p>
+                  ) : null}
+                </td>
+              )}
               <td
                 className={clsx(
                   "p-2 font-medium",
