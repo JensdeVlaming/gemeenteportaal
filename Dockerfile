@@ -25,7 +25,7 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=build /app/backend/pocketbase .
-COPY --from=frontend-build /app/frontend/dist ./pb_public_dist
+COPY --from=frontend-build /app/frontend/dist ./pb_public
 EXPOSE 8090
 
-CMD ["sh", "-c", "set -e; rm -rf /app/pb_public; mkdir -p /app/pb_public; cp -a /app/pb_public_dist/. /app/pb_public; ./pocketbase migrate up; exec ./pocketbase serve --http=0.0.0.0:8090"]
+CMD ["sh", "-c", "set -e; ./pocketbase migrate up; exec ./pocketbase serve --http=0.0.0.0:8090"]
