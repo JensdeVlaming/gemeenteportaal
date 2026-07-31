@@ -71,7 +71,17 @@ export async function parseDutyElderCsv(file: File): Promise<DutyElderCsvRow[]> 
     );
   }
 
-  return rows.slice(1).map((values) => ({
+  const dataRows = rows.slice(1);
+  dataRows.forEach((values, index) => {
+    if (values.length !== 2) {
+      const columnLabel = values.length === 1 ? "kolom" : "kolommen";
+      throw new Error(
+        `CSV-rij ${index + 2} bevat ${values.length} ${columnLabel}; verwacht er exact 2.`
+      );
+    }
+  });
+
+  return dataRows.map((values) => ({
     event_start_time: values[0]?.trim() ?? "",
     duty_elder: values[1]?.trim() ?? "",
   }));
